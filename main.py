@@ -1,5 +1,7 @@
+from tokenize import Decnumber
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class Data:
@@ -26,7 +28,7 @@ class Data:
         return self.dates
 
     def create_predictors(self):
-        predictors = [[] for col in self.get_column_names()]
+        predictors = [[] for _ in self.get_column_names()]
         count = 0
         for col in predictors:
             col.append(self.dataframe[self.column_names[count]])
@@ -35,46 +37,34 @@ class Data:
         return predictors
 
     def plot_graph(self, predictors):
-        plt.plot(self.dates, predictors[0][0], label="Crakehill")
-        plt.plot(self.dates, predictors[1][0], label="Skip Bridge")
-        plt.plot(self.dates, predictors[2][0], label="Westwick")
-
+        plt.scatter(predictors[3][0], predictors[0][0], label="Crakehill x Skelton")
+        # plt.scatter(predictors[3][0], predictors[1][0], label="Skip Bridge x Skelton")
+        # plt.scatter(predictors[3][0], predictors[2][0], label="Westwick x Skelton")
+        x = predictors[3][0]
+        y = predictors[0][0]
         plt.title("Daily Flow")
-        plt.ylabel("Mean Daily Flow - Cumecs")
-        plt.xlabel("Date")
+        plt.ylabel("Predictor")
+        plt.xlabel("Skelton")
         plt.legend()
         plt.show()
 
 
+class MLP:
+    def __init__(self, data) -> None:
+        self.predictors = data.create_predictors()
+
+    def pred(self):
+        return self.predictors
+
+
 data = Data()
-predictors = data.create_predictors()
-print(data.get_dates())
-data.plot_graph(predictors)
+mlp = MLP(data)
+print(mlp.pred())
 
+# predictors = data.create_predictors()
 
-"""
-dates = dataframe["Dates"]
-predictor1 = dataframe["Crakehill"]  # all values in column
-predictor1_training = dataframe["Crakehill"][:732]  # 2 years of training data
-predictor1_validation = dataframe["Crakehill"][732:976]  # 1 year of validation data
-predictor1_testing = dataframe["Crakehill"][976:]  # testing data
+# data.plot_graph(predictors)  # plot graph
 
-predictor2 = dataframe["Skip Bridge"]  # all values in column
-predictor2_training = dataframe["Skip Bridge"][:732]  # 2 years of training data
-predictor2_validation = dataframe["Skip Bridge"][732:976]  # 1 year of validation data
-predictor2_testing = dataframe["Skip Bridge"][976:]  # testing data
-
-predictor3 = dataframe["Westwick"]  # all values in column
-predictor3_training = dataframe["Westwick"][:732]  # 2 years of training data
-predictor3_validation = dataframe["Westwick"][732:976]  # 1 year of validation data
-predictor3_testing = dataframe["Westwick"][976:]  # testing data
-
-plt.plot(dates, predictor1, label="Crakehill")
-plt.plot(dates, predictor2, label="Skip Bridge")
-plt.plot(dates, predictor3, label="Westwick")
-
-plt.title("Daily Flow")
-plt.ylabel("Mean Daily Flow - Cumecs")
-plt.xlabel("Date")
-plt.legend()
-plt.show()"""
+# training data: [:732]
+# validation data: [732:976]
+# testing data: [976:]
