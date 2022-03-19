@@ -1,7 +1,11 @@
-from tokenize import Decnumber
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import math
+from nnfs.datasets import spiral_data
+import nnfs
+
+nnfs.init()
 
 
 class Data:
@@ -12,6 +16,9 @@ class Data:
         self.column_names = []
         self.dates = self.dataframe["Dates"]
 
+    def get_columns(self):
+        return list(self.dataframe.columns.values)
+
     def get_data(self):
         return self.dataframe
 
@@ -19,47 +26,118 @@ class Data:
         return len(self.dataframe.columns)
 
     def get_column_names(self):
-        for i in range(1, self.get_number_of_columns()):
-            self.column_names.append(self.dataframe.columns[i])
-
+        self.column_names = list(self.dataframe.columns.values)
         return self.column_names
 
     def get_dates(self):
         return self.dates
 
-    def create_predictors(self):
-        predictors = [[] for _ in self.get_column_names()]
-        count = 0
-        for col in predictors:
-            col.append(self.dataframe[self.column_names[count]])
-            count += 1
+    def get_number_of_values(self, predictors):
+        return len(predictors[0])
+
+    def get_predictors(self):
+        predictors = []
+        for i in range(1, self.get_number_of_columns() - 1):
+            predictors.append((self.dataframe[self.get_column_names()[i]].values))
 
         return predictors
 
     def plot_graph(self, predictors):
-        plt.scatter(predictors[3][0], predictors[0][0], label="Crakehill x Skelton")
+        # plt.scatter(predictors[3][0], predictors[0][0], label="Crakehill x Skelton")
         # plt.scatter(predictors[3][0], predictors[1][0], label="Skip Bridge x Skelton")
-        # plt.scatter(predictors[3][0], predictors[2][0], label="Westwick x Skelton")
-        x = predictors[3][0]
-        y = predictors[0][0]
+        plt.scatter(predictors[0], predictors[3], label="Westwick x Skelton")
+        # x = predictors[4]
+        # y = predictors[3]
         plt.title("Daily Flow")
         plt.ylabel("Predictor")
         plt.xlabel("Skelton")
         plt.legend()
+
+        # theta = np.polyfit(x, y, 1)  # linear line of best fit
+        # y_line = theta[1] + theta[0] * x
+        # plt.plot(x, y_line, "r")
+
         plt.show()
 
 
-class MLP:
-    def __init__(self, data) -> None:
-        self.predictors = data.create_predictors()
+class Layer:
+    def __init__(self, number_of_inputs, number_of_neurons):
+        self.weights = 0.01 * np.random.randn(number_of_inputs, number_of_neurons)
+        self.biases = np.zeros((1, number_of_neurons))
 
-    def pred(self):
-        return self.predictors
+    def forward_pass(self, inputs):
+        self.output = np.dot(inputs, self.weights) + self.biases
 
 
-data = Data()
-mlp = MLP(data)
-print(mlp.pred())
+class Sigmoid:
+    def __init__(self) -> None:
+        pass
+
+    def forward(self, inputs):
+        self.output = 1 / (1 + np.exp(-inputs))
+        return self.output
+
+
+class ReLU:
+    def __init__(self) -> None:
+        pass
+
+    def forward(self, inputs):
+        self.output = np.maximum(0, inputs)
+        return self.output
+
+
+class Softmax:
+    def __init__(self) -> None:
+        pass
+
+    def forward(self, inputs):
+        e_vals = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
+        normalised = e_vals / np.sum(e_vals, axis=1, keepdims=True)
+        self.output = normalised
+
+
+x, y = spiral_data(samples=100, classes=3)
+layer1 = Layer(2, 3)
+sig1 = Sigmoid()
+layer1.forward_pass(x)
+print(sig1.forward(layer1.output)[:5])
+# relu1 = ReLU()
+# layer2 = Layer(3, 3)
+# relu2 = Softmax()
+# layer1.forward_pass(x)
+# relu1.forward(layer1.output)
+# layer2.forward_pass(relu1.output)
+# relu2.forward(layer2.output)
+# print(relu2.output[:5])
+# softmax = Softmax()
+# softmax.forward([[1, 2, 3]])
+# print(softmax.output)
+# print(sum(sum(softmax.output)))
+# print(sum(softmax.output))
+
+
+# create data object
+# data = Data()
+# predictors = data.get_predictors()
+# layer1 = Layer(data.get_number_of_values(predictors), 4)
+# relu = ReLU()
+# layer1.forward_pass(predictors)
+# print(relu.forward(layer1.output))
+
+# layer2 = Layer(4, 4)
+# layer2.forward_pass(layer1.output)
+# print(layer1.output)
+# print(layer2.output)
+
+
+# layer2 = Layer(3, 5)
+# layer2.forward_pass(layer1.output)
+# print(layer2.output)
+
+# predictors = data.get_predictors()
+
+# data.plot_graph(predictors)
 
 # predictors = data.create_predictors()
 
