@@ -1,11 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import math
-from nnfs.datasets import spiral_data
-import nnfs
 
-nnfs.init()
+np.random.seed(0)
 
 
 class Data:
@@ -38,7 +35,11 @@ class Data:
     def get_predictors(self):
         predictors = []
         for i in range(1, self.get_number_of_columns() - 1):
-            predictors.append((self.dataframe[self.get_column_names()[i]].values))
+            predictors.append(
+                (
+                    self.dataframe[self.get_column_names()[i]].head(730).values
+                )  # training data
+            )
 
         return predictors
 
@@ -97,11 +98,39 @@ class Softmax:
         self.output = normalised
 
 
-x, y = spiral_data(samples=100, classes=3)
-layer1 = Layer(2, 3)
+class LMSE:
+    def __init__(self) -> None:
+        pass
+
+    def forward(self, predicted_output, actual_output):
+        self.output = (predicted_output - actual_output) ** 2
+
+        return self.output
+
+
+data = Data()
+predictors = data.get_predictors()
+"""
+layer1 = Layer(data.get_number_of_values(predictors), 5)
 sig1 = Sigmoid()
-layer1.forward_pass(x)
-print(sig1.forward(layer1.output)[:5])
+layer1.forward_pass(predictors)
+layer1sig = sig1.forward(layer1.output)
+
+sig2 = Sigmoid()
+layer2 = Layer(5, 5)
+layer2.forward_pass(layer1sig)
+layer2sig = sig2.forward(layer2.output)
+
+sig3 = Sigmoid()
+outputLayer = Layer(5, 1)
+outputLayer.forward_pass(layer2sig)
+outputSig = sig3.forward(outputLayer.output)
+
+loss = LMSE()
+loss.forward(outputSig, predictors)
+print(loss.output)
+"""
+
 # relu1 = ReLU()
 # layer2 = Layer(3, 3)
 # relu2 = Softmax()
