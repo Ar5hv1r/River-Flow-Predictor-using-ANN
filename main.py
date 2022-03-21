@@ -60,6 +60,17 @@ class Data:
 
         plt.show()
 
+    # 0.8*(rawval - min / max-min) + 0.1
+    def standardise(self, predictors):
+        for i in range(len(predictors)):
+            for j in range(len(predictors[i])):
+                predictors[i][j] = 0.8 * (
+                    (predictors[i][j] - min(predictors[i]))
+                    / (max(predictors[i] - min(predictors[i])) + 0.1)
+                )
+
+        return predictors
+
 
 class Layer:
     def __init__(self, number_of_inputs, number_of_neurons):
@@ -110,6 +121,9 @@ class LMSE:
 
 data = Data()
 predictors = data.get_predictors()
+standardised = data.standardise(predictors)
+print(standardised)
+
 """
 layer1 = Layer(data.get_number_of_values(predictors), 5)
 sig1 = Sigmoid()
