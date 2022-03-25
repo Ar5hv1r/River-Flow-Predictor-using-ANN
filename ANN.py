@@ -102,19 +102,22 @@ class Layer:
         self.output_delta = (predictand - self.node_values[-1]) * (
             self.backward_sigmoid(self.node_values[-1])
         )
-        self.hidden_deltas = [self.output_delta]
+        self.hidden_deltas = []
+        self.hidden_deltas.append(self.output_delta)
         self.layer_deltas = []
         for i in range(len(self.weights) - 2, -1, -1):
-            self.layer_deltas.clear()
+            del self.layer_deltas[:]
             for j in range(len(self.weights[i])):
-                delta_j = sum(
-                    self.weights[i][j] * self.node_values[i][j]
-                ) * self.backward_sigmoid(self.node_values[i][j])
-
-                self.layer_deltas.append(delta_j)
-            self.hidden_deltas.append(self.layer_deltas)
+                self.layer_deltas.append(self.weights[i][j] * self.node_values[i][j])
+            self.layer_deltas = list(map(sum, self.layer_deltas))
+            self.layer_deltas = list(
+                map(
+                    (self.backward_sigmoid(self.node_values[i][j])).__mul__,
+                    self.layer_deltas,
+                )
+            )
+            self.hidden_deltas.append(self.layer_deltas[:])
         self.hidden_deltas = self.hidden_deltas[::-1]
-        # print(f"Weights Before: {self.weights}")
 
         for i in range(len(self.weights)):
             for j in range(len(self.weights[i])):
@@ -124,15 +127,9 @@ class Layer:
                     * float(self.node_values[i][j])
                 )
 
-        # print(f"Weights After: {self.weights}")
-
-        # print(f"Bias Before: {self.biases}")
-
         for i in range(len(self.biases)):
             for j in range(len(self.biases[i])):
-                self.biases[i][j] -= self.learning_rate * self.hidden_deltas[i][j]
-
-        # print(f"Bias After: {self.biases}")
+                self.biases[i][j] += self.learning_rate * self.hidden_deltas[i][j]
 
     def RMSE(self, n):
         rmse = (self.rmse_numerator / n) ** 0.5
@@ -145,7 +142,7 @@ class Layer:
 
 if __name__ == "__main__":
     start_time = time.time()
-    layer_sizes = (3, 5, 5, 1)
+    layer_sizes = (3, 5, 7, 1)
     data = Data()
     predictors = data.get_predictors()
     standardised = data.standardise(predictors)
@@ -162,7 +159,7 @@ if __name__ == "__main__":
             layer.backpropagation(predictand[j])
 
         layer.RMSE(data.get_predictand_length(predictand))
-    # print(layer.getRMSE())
+
     print("--- %s seconds ---" % (time.time() - start_time))
     x = list(range(1, 501))
     plt.xlabel("Epochs")
