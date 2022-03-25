@@ -64,9 +64,13 @@ class Data:
     def standardise(self, predictors):
         for i in range(len(predictors)):
             for j in range(len(predictors[i])):
-                predictors[i][j] = 0.8 * (
-                    (predictors[i][j] - min(predictors[i]))
-                    / (max(predictors[i] - min(predictors[i])) + 0.1)
+                predictors[i][j] = (
+                    0.8
+                    * (
+                        (predictors[i][j] - min(predictors[i]))
+                        / (max(predictors[i]) - min(predictors[i]))
+                    )
+                    + 0.1
                 )
 
         return predictors
@@ -76,6 +80,7 @@ class Layer:
     def __init__(self, number_of_inputs, number_of_neurons):
         self.weights = 0.01 * np.random.randn(number_of_inputs, number_of_neurons)
         self.biases = np.zeros((1, number_of_neurons))
+        print(sum(self.weights))
 
     def forward_pass(self, inputs):
         self.output = np.dot(inputs, self.weights) + self.biases
@@ -122,28 +127,35 @@ class LMSE:
 data = Data()
 predictors = data.get_predictors()
 standardised = data.standardise(predictors)
-print(standardised)
 
-"""
 layer1 = Layer(data.get_number_of_values(predictors), 5)
+
+# layer1 = Layer(data.get_number_of_values(predictors), 5)
 sig1 = Sigmoid()
 layer1.forward_pass(predictors)
 layer1sig = sig1.forward(layer1.output)
 
-sig2 = Sigmoid()
-layer2 = Layer(5, 5)
-layer2.forward_pass(layer1sig)
-layer2sig = sig2.forward(layer2.output)
+# sig2 = Sigmoid()
+# layer2 = Layer(5, 5)
+# layer2.forward_pass(layer1sig)
+# layer2sig = sig2.forward(layer2.output)
 
-sig3 = Sigmoid()
-outputLayer = Layer(5, 1)
-outputLayer.forward_pass(layer2sig)
-outputSig = sig3.forward(outputLayer.output)
+# sig3 = Sigmoid()
+# outputLayer = Layer(5, 1)
+# outputLayer.forward_pass(layer2sig)
+# outputSig = sig3.forward(outputLayer.output)
 
+# final = Sigmoid()
+# outputLayer1 = Layer(1, 1)
+# outputLayer1.forward_pass(outputSig)
+# outputSig1 = final.forward(outputLayer1.output)
+# print(outputSig1)
+
+"""
 loss = LMSE()
 loss.forward(outputSig, predictors)
 print(loss.output)
-"""
+
 
 # relu1 = ReLU()
 # layer2 = Layer(3, 3)
@@ -189,3 +201,4 @@ print(loss.output)
 # training data: [:732]
 # validation data: [732:976]
 # testing data: [976:]
+"""
