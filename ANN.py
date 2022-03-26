@@ -99,8 +99,21 @@ class Data:
                     self.dataframe[self.get_column_names()[i]].head(730).values
                 )  # training data
             )
-
+        # print(f"Predictors: {predictors}")
         return predictors
+
+    def get_validation_data(self):
+        validation_data = []
+        for i in range(1, self.get_number_of_columns() - 1):
+            validation_data.append(
+                self.dataframe[self.get_column_names()[i]][731:1127].values
+            )
+        # print(validation_data)
+        return validation_data
+
+    def get_validation_predictand(self):
+        validation_predictand = list(self.dataframe["Skelton"][731:1127].values)
+        return validation_predictand
 
     def standardise(self, predictors):
         """Standardises data between a certain range
@@ -138,6 +151,26 @@ class Data:
 
         return predictand
 
+    def standardise_validation(self, validation_data):
+        copy = validation_data[:]
+        for i in range(len(validation_data)):
+            for j in range(len(validation_data[i])):
+                validation_data[i][j] = (
+                    0.8 * ((copy[i][j] - min(copy[i])) / (max(copy[i]) - min(copy[i])))
+                    + 0.1
+                )
+
+        return validation_data
+
+    def standardise_predictand_validation(self, validation_predictand):
+        copy = validation_predictand[:]
+        for i in range(len(validation_predictand)):
+            validation_predictand[i] = (
+                0.8 * ((copy[i] - min(copy)) / (max(copy) - min(copy))) + 0.1
+            )
+
+        return validation_predictand
+
 
 class Layer:
     def __init__(self, layer_sizes) -> None:
@@ -158,6 +191,16 @@ class Layer:
         self.learning_rate = 0.001  # sets learning rate for MLP
         self.rmse_numerator = 0
         self.rmse_values = []
+        self.validate_numerator = 0
+        self.validate_RMSE_values = []
+
+    def validate(self, validation_data, validation_predictand):
+        for weights, biases in zip(self.weights, self.biases):
+            validation_data = self.forward_sigmoid(
+                np.matmul(weights, validation_data) + biases
+            )
+
+        self.validate_numerator += (validation_data - validation_predictand) ** 2
 
     def predict(self, inputs, predictand):
         """Forward Pass through Neural Network (NN)
@@ -258,6 +301,12 @@ class Layer:
         rmse = (self.rmse_numerator / n) ** 0.5
         self.rmse_values.append(rmse)
 
+    def validateRMSE(self, n):
+        rmse = (self.validate_numerator / n) ** 0.5
+        print(rmse)
+        self.validate_RMSE_values.append(rmse)
+        return rmse
+
     def getRMSE(self):
         """Retrieves value of RMSE calculation
 
@@ -268,9 +317,10 @@ class Layer:
 
 
 if __name__ == "__main__":
+    rmse_results = []
     # adjustable layer sizes --> first and last numbers are input and output layers respectively
     # middle numbers are hidden nodes
-    layer_sizes = (3, 5, 7, 1)
+    layer_sizes = (3, 5, 4, 7, 1)
 
     data = Data()
 
@@ -284,19 +334,45 @@ if __name__ == "__main__":
     predictand = data.get_predictand()
     predictand = data.standardise_predictand(predictand)
 
+    # get validation data and standardise
+    validation_data = data.get_validation_data()
+    validation_data = data.standardise_validation(validation_data)
+
+    validation_predictand = data.get_validation_predictand()
+    validation_predictand = data.standardise_predictand_validation(
+        validation_predictand
+    )
+    flag = False
     # loop through n epochs
-    for i in range(500):
+    for i in range(1000):
         # reset RMSE numerator after each epoch
         layer.rmse_numerator = 0
+        print(f"Epoch: {i}")
         for j in range(len(standardised[0])):
             # create and pass in necessary values
             inputs = [val[j] for val in standardised]
             layer.predict(inputs, predictand[j])
             layer.backpropagation(predictand[j])
+        if not (i % 50):
+            layer.validate_numerator = 0
+            for k in range(len(validation_data[0])):
+                validation_input = [val[k] for val in validation_data]
+                layer.validate(validation_input, validation_predictand[k])
+            rmse_results.append(
+                layer.validateRMSE(data.get_predictand_length(validation_predictand))
+            )
+
+            if len(rmse_results) > 1:
+                print(rmse_results)
+                if rmse_results[-1] > rmse_results[-2]:
+                    flag = True
+
+        if flag:
+            break
 
         layer.RMSE(data.get_predictand_length(predictand))
     # plot graph of RMSE against epochs
-    x = list(range(1, 501))
+    x = list(range(0, i + 1))
     plt.xlabel("Epochs")
     plt.ylabel("RMSE Error")
     plt.plot(x, layer.getRMSE())
