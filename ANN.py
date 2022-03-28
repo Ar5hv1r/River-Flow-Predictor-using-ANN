@@ -1,7 +1,9 @@
 # necessary imports
+from tkinter import S
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import copy
 
 
 class Data:
@@ -188,11 +190,13 @@ class Layer:
         self.biases = [
             np.zeros((s)) for s in layer_sizes[1:]
         ]  # generates a zero matrix to represent biases
-        self.learning_rate = 0.001  # sets learning rate for MLP
+        self.learning_rate = 0.005  # sets learning rate for MLP
         self.rmse_numerator = 0
         self.rmse_values = []
         self.validate_numerator = 0
         self.validate_RMSE_values = []
+        self.weight_change = [np.zeros((s)) for s in self.weight_shapes]
+        self.previous_weight = [[]]
 
     def validate(self, validation_data, validation_predictand):
         for weights, biases in zip(self.weights, self.biases):
@@ -240,6 +244,7 @@ class Layer:
         Returns:
             float: derivative of Sigmoid function
         """
+        # print(f"X: {x}")
         return x * (1 - x)
 
     def backpropagation(self, predictand):
@@ -256,6 +261,7 @@ class Layer:
             self.output_delta
         )  # add output delta to final delta list
         self.layer_deltas = []
+        self.weight_change = copy.deepcopy(self.weights)
 
         # loop through weights for the network backwards, not including weights going from the final hidden layer to the output layer
         for i in range(len(self.weights) - 2, -1, -1):
@@ -284,7 +290,15 @@ class Layer:
                     self.learning_rate
                     * float(self.hidden_deltas[i][j])
                     * float(self.node_values[i][j])
+                ) + 0.9 * (
+                    np.subtract(self.weights[i][j], self.weight_change[i][j])
                 )  # update all weights
+
+                ### Momentum
+
+                # self.weights[i][j] = self.weights[i][j] + 0.9 * (
+                #     np.subtract(self.weights[i][j], self.weight_change[i][j])
+                # )
 
         for i in range(len(self.biases)):
             for j in range(len(self.biases[i])):
@@ -303,7 +317,7 @@ class Layer:
 
     def validateRMSE(self, n):
         rmse = (self.validate_numerator / n) ** 0.5
-        print(rmse)
+        # print(rmse)
         self.validate_RMSE_values.append(rmse)
         return rmse
 
@@ -320,7 +334,7 @@ if __name__ == "__main__":
     rmse_results = []
     # adjustable layer sizes --> first and last numbers are input and output layers respectively
     # middle numbers are hidden nodes
-    layer_sizes = (3, 5, 4, 7, 1)
+    layer_sizes = (3, 5, 7, 1)
 
     data = Data()
 
@@ -344,7 +358,7 @@ if __name__ == "__main__":
     )
     flag = False
     # loop through n epochs
-    for i in range(1000):
+    for i in range(10000):
         # reset RMSE numerator after each epoch
         layer.rmse_numerator = 0
         print(f"Epoch: {i}")
@@ -353,7 +367,7 @@ if __name__ == "__main__":
             inputs = [val[j] for val in standardised]
             layer.predict(inputs, predictand[j])
             layer.backpropagation(predictand[j])
-        if not (i % 50):
+        if not (i % 10):
             layer.validate_numerator = 0
             for k in range(len(validation_data[0])):
                 validation_input = [val[k] for val in validation_data]
@@ -363,8 +377,8 @@ if __name__ == "__main__":
             )
 
             if len(rmse_results) > 1:
-                print(rmse_results)
-                if rmse_results[-1] > rmse_results[-2]:
+                # print(rmse_results)
+                if rmse_results[-1] >= rmse_results[-2]:
                     flag = True
 
         if flag:
@@ -372,7 +386,7 @@ if __name__ == "__main__":
 
         layer.RMSE(data.get_predictand_length(predictand))
     # plot graph of RMSE against epochs
-    x = list(range(0, i + 1))
+    x = list(range(1, i + 1))
     plt.xlabel("Epochs")
     plt.ylabel("RMSE Error")
     plt.plot(x, layer.getRMSE())
